@@ -111,12 +111,16 @@ namespace Routeurs
                             paths[sw.Key].Clear();
 
                             // On enregistre le nouveau chemin
+
+                            paths[sw.Key].Add(this); // On commence par notre switch this
+
                             for (int i = 0; i < paths[currentSwitch].Count; ++i)
                             {
                                 if (!paths[sw.Key].Contains(paths[currentSwitch][i]))
                                     paths[sw.Key].Add(paths[currentSwitch][i]);
                             }
-                            paths[sw.Key].Add(sw.Key);
+
+                            paths[sw.Key].Add(sw.Key); // On termine par la destination
                         }
                     }
                 }
@@ -124,10 +128,9 @@ namespace Routeurs
                 // On a fini de parcourir les voisins du switch étudié
                 unvisitedSwitch.Remove(currentSwitch);
 
-                // On cherche le switch ayant la distance la plus faible par rapport au switch this dans le graphe
+                // On cherche un nouveau switch a étudié ayant la distance la plus faible par rapport au switch this dans le graphe
 
                 int min = int.MaxValue;
-
                 foreach (var sw in distances)
                 {
                     // On ne check que les switchs pas encore visités
@@ -143,12 +146,12 @@ namespace Routeurs
                 }
             }
 
-            // Affichage des chemins les plus courts trouvés du switch this à un autre
+            // Affichage des chemins les plus courts trouvés entre chaque switch et notre switch this
             for (int i = 0; i < paths.Keys.Count; ++i)
             {
                 if (paths.ContainsKey(allSwitches[i]))
                 {
-                    Console.WriteLine($"\nPathing from : {ipAddress.GetStringAddress()} to : {allSwitches[i].ipAddress.GetStringAddress()}");
+                    Console.WriteLine($"\nPathing from {ipAddress.GetStringAddress()} to {allSwitches[i].ipAddress.GetStringAddress()}");
                     foreach (var item in paths[allSwitches[i]])
                     {
                         Console.WriteLine(item.ipAddress.GetStringAddress());
@@ -160,23 +163,25 @@ namespace Routeurs
 
             // Affichage des distances du switch this à un autre
             foreach (var sw in distances)
-                Console.WriteLine($"Total distance from : {ipAddress.GetStringAddress()} to : {sw.Key.ipAddress.GetStringAddress()} : {sw.Value}");
+                Console.WriteLine($"Total distance from {ipAddress.GetStringAddress()} to {sw.Key.ipAddress.GetStringAddress()} : {sw.Value}");
 
-            // Dressage de la route table
+            // Dressage de la route table pour notre switch this
             for (int i = 0; i < allSwitches.Count; ++i)
             {
+                // Si notre switch this est dans la même plage que le switch étudié
                 if (allSwitches[i].ipAddress.GetAdressRange() == ipAddress.GetAdressRange())
-                    routeTable[allSwitches[i].ipAddress.GetAdressRange()] = this;
+                    routeTable[allSwitches[i].ipAddress.GetAdressRange()] = this; // this est donc la destination
                 else
                 {
-                    List<Switch> value;
-                    if (paths.TryGetValue(allSwitches[i], out value))
+                    // Sinon, on regarde dans notre map de chemins entre chaque switch et notre switch this
+                    if (paths.TryGetValue(allSwitches[i], out List<Switch> value))
                     {
                         try
                         {
-                            routeTable[allSwitches[i].ipAddress.GetAdressRange()] = value[0];
+                            // Le switch-passerelle le plus proche dans notre chemin est stocké à l'indice 1, 0 étant le switch this lui-même
+                            routeTable[allSwitches[i].ipAddress.GetAdressRange()] = value[1];
                         }
-                        catch(ArgumentOutOfRangeException ex)
+                        catch (ArgumentOutOfRangeException ex) // Mesure de précaution
                         {
                             Console.WriteLine(ex);
                             routeTable[allSwitches[i].ipAddress.GetAdressRange()] = null;
