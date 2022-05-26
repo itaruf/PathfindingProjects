@@ -62,23 +62,11 @@ namespace Routeurs
         public void FillRouteTable(List<Switch> allSwitches)
         {
             routeTable.Clear();
-            //TODO
-            //On veut créer dans la table de routage une entrée par range distance'ip
-            //en attendant on va juste mettre le voisinage direct
-
+  
             if (connectedSwitch.Count <= 0)
                 return;
 
-            /*Console.WriteLine($"\n{ipAddress.GetStringAddress()} (SOURCE)\n");*/
-
-            /*foreach(var sw in connectedSwitch)
-            {
-                Console.WriteLine($"{sw.Value} value");
-            }*/
-
-            int minLatency = int.MaxValue;
-
-            /*Initialisation*/
+            /*Début Initialisation - Étape initiale*/
 
             // Liste des switchs non-visités
             List<Switch> unvisitedSwitch = new List<Switch>();
@@ -98,22 +86,31 @@ namespace Routeurs
             distances[this] = 0;
             Switch currentSwitch = this;
 
+            /*Fin Initialisation*/
+
+            /*Dijkstra*/
+            // Tant qu'il reste des switchs pas encore visités
             while (unvisitedSwitch.Count > 0)
             {
+                // On parcourt les switchs voisins
                 foreach (var sw in currentSwitch.connectedSwitch)
                 {
-                    // On ne check que les switch pas encore visités
+                    // On ne check que les switch voisins pas encore visités
                     if (unvisitedSwitch.Contains(sw.Key))
                     {
+                        // On additionne d'une part, la distance entre le switch étudié et le switch voisin étudié (ie: les ms entre les deux), et d'autre part, la distance cumulée du switch étudié depuis le switch this
                         int distance = distances[currentSwitch] + sw.Value;
+
+                        // Si la distance cumulée du switch voisin est supérieure à la nouvelle distance calculée, alors nous avons trouvé un chemin plus court
                         if (distances[sw.Key] > distance)
                         {
-                            // On change la valeur et on met à jour le chemin
+                            // On change la valeur et on met à jour le chemin de ce switch voisin
                             distances[sw.Key] = distance;
 
                             // On efface le précédent chemin enregistré
                             paths[sw.Key].Clear();
 
+                            // On enregistre le nouveau chemin
                             for (int i = 0; i < paths[currentSwitch].Count; ++i)
                             {
                                 if (!paths[sw.Key].Contains(paths[currentSwitch][i]))
@@ -124,11 +121,13 @@ namespace Routeurs
                     }
                 }
 
+                // On a fini de parcourir les voisins du switch étudié
                 unvisitedSwitch.Remove(currentSwitch);
+
+                // On cherche le switch ayant la distance la plus faible par rapport au switch this dans le graphe
 
                 int min = int.MaxValue;
 
-                // On cherche le switch ayant la distance la plus faible par rapport au switch this dans le graphe
                 foreach (var sw in distances)
                 {
                     // On ne check que les switchs pas encore visités
@@ -137,6 +136,7 @@ namespace Routeurs
                         if (min > sw.Value)
                         {
                             min = sw.Value;
+                            // Nouveau switch ayant la distance la plus faible actuellement
                             currentSwitch = sw.Key;
                         }
                     }
@@ -144,25 +144,25 @@ namespace Routeurs
             }
 
             // Affichage des chemins les plus courts trouvés du switch this à un autre
-            /*  for (int i = 0; i < paths.Keys.Count; ++i)
-              {
-                  if (paths.ContainsKey(allSwitches[i]))
-                  {
-                      Console.WriteLine($"\nPathing from : {ipAddress.GetStringAddress()} to : {allSwitches[i].ipAddress.GetStringAddress}");
-                      foreach (var item in paths[allSwitches[i]])
-                      {
-                          Console.WriteLine(item.ipAddress.GetStringAddress());
-                      }
-                  }
-              }*/
+            for (int i = 0; i < paths.Keys.Count; ++i)
+            {
+                if (paths.ContainsKey(allSwitches[i]))
+                {
+                    Console.WriteLine($"\nPathing from : {ipAddress.GetStringAddress()} to : {allSwitches[i].ipAddress.GetStringAddress()}");
+                    foreach (var item in paths[allSwitches[i]])
+                    {
+                        Console.WriteLine(item.ipAddress.GetStringAddress());
+                    }
+                }
+            }
 
-            /*Console.WriteLine("\n");
+            Console.WriteLine("\n");
 
-              // Affichage des distances du switch this à un autre
-              foreach (var sw in distances)
-                  Console.WriteLine($"{Total distance from {ipAddress.GetStringAddress()} to sw.Key.ipAddress.GetStringAddress()} : {sw.Value}");*/
+            // Affichage des distances du switch this à un autre
+            foreach (var sw in distances)
+                Console.WriteLine($"Total distance from : {ipAddress.GetStringAddress()} to : {sw.Key.ipAddress.GetStringAddress()} : {sw.Value}");
 
-            // Dressage de la table
+            // Dressage de la route table
             for (int i = 0; i < allSwitches.Count; ++i)
             {
                 if (allSwitches[i].ipAddress.GetAdressRange() == ipAddress.GetAdressRange())
