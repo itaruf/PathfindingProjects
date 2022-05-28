@@ -74,12 +74,7 @@ namespace Pathfinding
                 {
                     // On ne prend pas en compte les cases non-atteignables
                     if (map[i][j] != int.MaxValue)
-                    {
-                        Console.WriteLine($"{i}, {j} added");
                         cases.Add(new Case(new Position(j, i), 0, 0, 0));
-                    }
-                    else
-                        Console.WriteLine($"{i}, {j} denied");
                 }
             }
 
@@ -199,56 +194,58 @@ namespace Pathfinding
 
             Console.WriteLine("\n");
 
-            Console.WriteLine(GetCase(goal).neighbors.Count);
+            /*Console.WriteLine(GetCase(goal).neighbors.Count);
 
             foreach (var c in GetCase(goal).neighbors)
-                Console.WriteLine($"{c.pos.X} {c.pos.Y} {c.g}");
+                Console.WriteLine($"{c.pos.X} {c.pos.Y} {c.g}");*/
 
-            /* while (uncheckedTiles.Count > 0)
-             {
-                 uncheckedTiles.Remove(currentCase);
-                 Case nextCase = null;
-                 int min = int.MaxValue;
+            while (uncheckedTiles.Count > 0)
+            {
+                uncheckedTiles.Remove(currentCase);
+                Case nextCase = null;
+                int min = int.MaxValue;
 
-                 if (currentCase == GetCase(goal) || currentCase == null)
-                     break;
+                if (currentCase == GetCase(doors[0]) || currentCase == null)
+                    break;
 
-                 *//*Console.WriteLine($"current case : {currentCase.pos.X} {currentCase.pos.Y}");*//*
+                Console.WriteLine($"current case : {currentCase.pos.X} {currentCase.pos.Y}");
 
-                 foreach (var n in neighbors[currentCase])
-                 {
-                     // On ne regarde que les cases voisines encore inexplorées
-                     if (uncheckedTiles.Contains(n))
-                     {
-                         Console.WriteLine($"current neighbor : {n.pos.X} {n.pos.Y}");
+                foreach (var n in currentCase.neighbors)
+                {
+                    // On ne regarde que les cases voisines encore inexplorées
+                    if (uncheckedTiles.Contains(n))
+                    {
+                        Console.WriteLine($"current neighbor : {n.pos.X} {n.pos.Y}");
 
-                         uncheckedTiles.Remove(n);
+                        n.g += currentCase.g;
+                        n.h = Heuristique(n.pos, doors[0]);
+                        n.f = n.g + n.h;
 
-                         n.g += currentCase.g;
-                         n.h = Heuristique(n.pos, doors[0]);
-                         n.f = n.g + n.h;
+                        // On sélectionne la case dont le coût total est le moins élevé
+                        if (n.f < min)
+                        {
+                            min = n.f;
+                            nextCase = n;
+                        }
+                        // s'il y a une égalité, on prend celui dont le coût est moindre
+                        /*else if (n.f == min)
+                        {
+                            if (n.g < nextCase.g)
+                                nextCase = n;
+                        }*/
+                    }
+                }
+          
+                // On ajoute au chemin la nouvelle case
+                p.Add(nextCase);
+                currentCase = nextCase;
+                if (currentCase != null)
+                    Console.WriteLine($"New Case : {currentCase.pos.X} {currentCase.pos.Y}");
+            }
 
-                         Console.WriteLine(n.f);
-
-                         // On sélectionne la case dont le coût total est le moins élevé
-                         if (n.f < min)
-                         {
-                             min = n.f;
-                             nextCase = n;
-                         }
-                     }
-                 }
-
-                 // On ajoute au chemin la nouvelle case
-                 p.Add(nextCase);
-                 currentCase = nextCase;
-                 if (currentCase != null)
-                     Console.WriteLine($"New Case : {currentCase.pos.X} {currentCase.pos.Y}");
-             }
-
-             foreach (var pa in p)
-                 if (pa != null)
-                     Console.WriteLine($"{pa.pos.X} {pa.pos.Y}");*/
+            foreach (var pa in p)
+                if (pa != null)
+                    Console.WriteLine($"{pa.pos.X} {pa.pos.Y}");
 
             return true;
         }
