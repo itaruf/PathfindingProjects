@@ -169,7 +169,7 @@ namespace Pathfinding
         //path: liste des points à traverser pour aller du départ à l'arrivée
         //cost: coût du trajet
         //checkedTiles: liste de toutes les positions qui ont été testées pour trouver le chemin le plus court
-        public bool GetShortestPath(List<Position> path, out int cost, HashSet<Position> checkedTiles)
+        public bool GetShortestPath(List<Position> path, out int cost)
         {
             /*Début Initialisation - Étape initiale*/
             cost = 0;
@@ -195,11 +195,6 @@ namespace Pathfinding
 
             Console.WriteLine("\n");
 
-            /*Console.WriteLine(GetCase(goal).neighbors.Count);
-
-            foreach (var c in GetCase(goal).neighbors)
-                Console.WriteLine($"{c.pos.X} {c.pos.Y} {c.g}");*/
-
             while (uncheckedTiles.Count > 0)
             {
                 uncheckedTiles.Remove(currentCase);
@@ -208,8 +203,6 @@ namespace Pathfinding
 
                 if (currentCase == GetCase(doors[0]) || currentCase == null)
                     break;
-
-                cost += map[currentCase.pos.Y][currentCase.pos.X];
 
                 Console.WriteLine($"current case : {currentCase.pos.X} {currentCase.pos.Y}");
 
@@ -238,11 +231,11 @@ namespace Pathfinding
                     }
                 }
 
-                // On ajoute au chemin la nouvelle case
-
+                // On ajoute la nouvelle case dans le chemin
                 p.Add(nextCase);
                 currentCase = nextCase;
-                /*Console.WriteLine($"New Case : {currentCase.pos.X} {currentCase.pos.Y}");*/
+
+                cost += map[currentCase.pos.Y][currentCase.pos.X];
             }
 
             foreach (var pa in p)
@@ -315,7 +308,7 @@ namespace Pathfinding
             Console.WriteLine("Initialisation....");
             game.Init();
             Console.WriteLine("Calcul du trajet....");
-            bool found = game.GetShortestPath(path, out cost, checkedTiles);
+            bool found = game.GetShortestPath(path, out cost);
             if(found)
             {
                 Console.WriteLine("Trajet trouvé! longueur: {0}, coût: {1}, et on a du tester {2} positions pour l'obtenir.", path.Count, cost, checkedTiles.Count);
