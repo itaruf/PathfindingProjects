@@ -2,7 +2,7 @@
 
 namespace Pathfinding
 {
-    struct Position : IEquatable<Position>
+    public struct Position : IEquatable<Position>
     {
         private int x;
         private int y;
