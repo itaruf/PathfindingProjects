@@ -22,7 +22,6 @@ namespace Pathfinding
 
         public List<Case> cases = new List<Case>();
         public Dictionary<Case, List<Case>> paths = new Dictionary<Case, List<Case>>();
-        public Dictionary<Case, List<Case>> neighbors = new Dictionary<Case, List<Case>>();
 
         public void Init()
         {
@@ -36,12 +35,7 @@ namespace Pathfinding
                 for (int j = 0; j < MAP_WIDTH; ++j)
                 {
                     // On met des valeurs aléatoires dans chaque case, sauf sur les murs
-
-                    map[i][j] = ((j == MAP_WIDTH /3) || (j == MAP_WIDTH * 2 / 3) || (i == MAP_HEIGHT / 2)) ? int.MaxValue : random.Next(MAX_WEIGHT) + 1;
-
-                    // On ne prend pas en compte les cases non-atteignables
-                    if (map[i][j] != int.MaxValue)
-                        cases.Add(new Case(new Position(i, j), 0, map[i][j], 0));
+                    map[i][j] = ((j == MAP_WIDTH /3) || (j == MAP_WIDTH * 2 / 3) || (i == MAP_HEIGHT / 2)) ? int.MaxValue : random.Next(MAX_WEIGHT) + 1;                 
                 }
             }
 
@@ -71,13 +65,29 @@ namespace Pathfinding
             foreach (Position position in doors)
             {
                 map[position.Y][position.X] = 1;
-                /*Console.WriteLine($"{position.Y} / {position.X}");*/
             }
+
+
+            for (int i = 0; i < MAP_HEIGHT; ++i)
+            {
+                for (int j = 0; j < MAP_WIDTH; ++j)
+                {
+                    // On ne prend pas en compte les cases non-atteignables
+                    if (map[i][j] != int.MaxValue)
+                    {
+                        Console.WriteLine($"{i}, {j} added");
+                        cases.Add(new Case(new Position(j, i), 0, 0, 0));
+                    }
+                    else
+                        Console.WriteLine($"{i}, {j} denied");
+                }
+            }
+
 
             foreach (var c in cases)
             {
-                var list = getNeighborsOfPoint(c.pos.X, c.pos.Y);
-                neighbors.Add(c, list);
+                c.g = map[c.pos.Y][c.pos.X];
+                getNeighborsOfPoint(c);
             }
         }
 
@@ -125,6 +135,34 @@ namespace Pathfinding
             }
             return neighbors;
         }
+        void getNeighborsOfPoint(Case c)
+        {
+            for (int xx = -1; xx <= 1; ++xx)
+            {
+                for (int yy = -1; yy <= 1; ++yy)
+                {
+                    if (xx == 0 && yy == 0)
+                    {
+                        continue; // You are not neighbor to yourself
+                    }
+                    if (Math.Abs(xx) + Math.Abs(yy) > 1)
+                    {
+                        continue;
+                    }
+                    if (isOnMap(c.pos.X + xx, c.pos.Y + yy))
+                    {
+                        var result = GetCase(c.pos.X + xx, c.pos.Y + yy);
+                        if (result != null)
+                        {
+                            if (result.g != int.MaxValue)
+                            {
+                                c.neighbors.Add(result);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         public bool isOnMap(int x, int y)
         {
@@ -147,59 +185,70 @@ namespace Pathfinding
                 uncheckedTiles.Add(c);
 
             Case currentCase = GetCase(playerStartPos);
+
+            foreach (var c in currentCase.neighbors)
+                Console.WriteLine($"{c.pos.X} {c.pos.Y} {c.g}");
+
+            Console.WriteLine("\n");
             currentCase.g = 0;
 
-            if (cases.Contains(GetCase(doors[0])))
-                Console.WriteLine(true);
+            Console.WriteLine(GetCase(doors[0]).neighbors.Count);
 
-            /*Console.WriteLine(neighbors[GetCase(doors[0])].Count);
-            Console.WriteLine()*/
+            foreach(var c in GetCase(doors[0].X, doors[0].Y).neighbors)
+                Console.WriteLine($"{c.pos.X} {c.pos.Y} {c.g}");
 
-           /* while (uncheckedTiles.Count > 0)
-            {
-                uncheckedTiles.Remove(currentCase);
-                Case nextCase = null;
-                int min = int.MaxValue;
+            Console.WriteLine("\n");
 
-                if (currentCase == GetCase(goal) || currentCase == null)
-                    break;
+            Console.WriteLine(GetCase(goal).neighbors.Count);
 
-                *//*Console.WriteLine($"current case : {currentCase.pos.X} {currentCase.pos.Y}");*//*
+            foreach (var c in GetCase(goal).neighbors)
+                Console.WriteLine($"{c.pos.X} {c.pos.Y} {c.g}");
 
-                foreach (var n in neighbors[currentCase])
-                {
-                    // On ne regarde que les cases voisines encore inexplorées
-                    if (uncheckedTiles.Contains(n))
-                    {
-                        Console.WriteLine($"current neighbor : {n.pos.X} {n.pos.Y}");
+            /* while (uncheckedTiles.Count > 0)
+             {
+                 uncheckedTiles.Remove(currentCase);
+                 Case nextCase = null;
+                 int min = int.MaxValue;
 
-                        uncheckedTiles.Remove(n);
+                 if (currentCase == GetCase(goal) || currentCase == null)
+                     break;
 
-                        n.g += currentCase.g;
-                        n.h = Heuristique(n.pos, doors[0]);
-                        n.f = n.g + n.h;
+                 *//*Console.WriteLine($"current case : {currentCase.pos.X} {currentCase.pos.Y}");*//*
 
-                        Console.WriteLine(n.f);
+                 foreach (var n in neighbors[currentCase])
+                 {
+                     // On ne regarde que les cases voisines encore inexplorées
+                     if (uncheckedTiles.Contains(n))
+                     {
+                         Console.WriteLine($"current neighbor : {n.pos.X} {n.pos.Y}");
 
-                        // On sélectionne la case dont le coût total est le moins élevé
-                        if (n.f < min)
-                        {
-                            min = n.f;
-                            nextCase = n;
-                        }
-                    }
-                }
+                         uncheckedTiles.Remove(n);
 
-                // On ajoute au chemin la nouvelle case
-                p.Add(nextCase);
-                currentCase = nextCase;
-                if (currentCase != null)
-                    Console.WriteLine($"New Case : {currentCase.pos.X} {currentCase.pos.Y}");
-            }
+                         n.g += currentCase.g;
+                         n.h = Heuristique(n.pos, doors[0]);
+                         n.f = n.g + n.h;
 
-            foreach (var pa in p)
-                if (pa != null)
-                    Console.WriteLine($"{pa.pos.X} {pa.pos.Y}");*/
+                         Console.WriteLine(n.f);
+
+                         // On sélectionne la case dont le coût total est le moins élevé
+                         if (n.f < min)
+                         {
+                             min = n.f;
+                             nextCase = n;
+                         }
+                     }
+                 }
+
+                 // On ajoute au chemin la nouvelle case
+                 p.Add(nextCase);
+                 currentCase = nextCase;
+                 if (currentCase != null)
+                     Console.WriteLine($"New Case : {currentCase.pos.X} {currentCase.pos.Y}");
+             }
+
+             foreach (var pa in p)
+                 if (pa != null)
+                     Console.WriteLine($"{pa.pos.X} {pa.pos.Y}");*/
 
             return true;
         }
@@ -243,19 +292,7 @@ namespace Pathfinding
 
             Console.WriteLine($"PLAYER POS : {playerStartPos.X}, {playerStartPos.Y}");
             Console.WriteLine($"DOOR 0 POS : {doors[0].X}, {doors[0].Y}");
-
-            /*foreach (var n in neighbors[GetCase(playerStartPos)])
-            {
-                Console.WriteLine($"{n.pos.X}, {n.pos.Y}");
-            }*/
-
-            /*foreach (var n in neighbors[playerStartPos])
-                Console.WriteLine($"{n.X}, {n.Y}");*/
-
-            /* foreach (var n in neighbors[new Position(0, 1)])
-             {
-                 Console.WriteLine($"{n.X}, {n.Y}");
-             }*/
+            Console.WriteLine($"GOAL POS : {goal.X}, {goal.Y}");
 
             Console.ForegroundColor = defaultColor;
         }

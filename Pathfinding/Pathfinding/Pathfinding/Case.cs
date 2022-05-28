@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Pathfinding
 {
@@ -8,6 +9,8 @@ namespace Pathfinding
         public int f = 0;    // total : coût + heuristique
         public int g = 0;    // coût
         public int h = 0;    // heuristique
+
+        public List<Case> neighbors = new List<Case>();
 
         public Case(Position position, int f, int g, int h)
         {
