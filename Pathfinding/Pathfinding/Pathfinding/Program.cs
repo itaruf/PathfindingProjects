@@ -12,6 +12,7 @@ namespace Pathfinding
         const int MAP_WIDTH = 20;
         const int MAP_HEIGHT = 20;
         const int MAX_WEIGHT = 9;
+        const int WEIGHT = (int) MAX_WEIGHT / 2;
 
         //ATTENTION: le tableau est construit en mode [hauteur][largeur].
         public int[][] map;
@@ -208,6 +209,8 @@ namespace Pathfinding
                 if (currentCase == GetCase(doors[0]) || currentCase == null)
                     break;
 
+                cost += map[currentCase.pos.Y][currentCase.pos.X];
+
                 Console.WriteLine($"current case : {currentCase.pos.X} {currentCase.pos.Y}");
 
                 foreach (var n in currentCase.neighbors)
@@ -216,9 +219,8 @@ namespace Pathfinding
                     if (uncheckedTiles.Contains(n))
                     {
                         Console.WriteLine($"current neighbor : {n.pos.X} {n.pos.Y}");
-
                         n.g += currentCase.g;
-                        n.h = Heuristique(n.pos, doors[0]);
+                        n.h = WEIGHT * Heuristique(n.pos, doors[0]);
                         n.f = n.g + n.h;
 
                         // On sélectionne la case dont le coût total est le moins élevé
@@ -235,17 +237,22 @@ namespace Pathfinding
                         }*/
                     }
                 }
-          
+
                 // On ajoute au chemin la nouvelle case
+
                 p.Add(nextCase);
                 currentCase = nextCase;
-                if (currentCase != null)
-                    Console.WriteLine($"New Case : {currentCase.pos.X} {currentCase.pos.Y}");
+                /*Console.WriteLine($"New Case : {currentCase.pos.X} {currentCase.pos.Y}");*/
             }
 
             foreach (var pa in p)
+            {
                 if (pa != null)
+                {
+                    path.Add(pa.pos);
                     Console.WriteLine($"{pa.pos.X} {pa.pos.Y}");
+                }
+            }
 
             return true;
         }
