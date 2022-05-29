@@ -24,10 +24,11 @@ namespace Pathfinding
         public List<Case> cases = new List<Case>();
         public Dictionary<Case, List<Case>> paths = new Dictionary<Case, List<Case>>();
         List<Case> uncheckedTiles = new List<Case>();
+        int cost = 0;
 
         public void Init()
         {
-            Random random = new Random();
+            Random random = new Random(10);
 
             map = new int[MAP_HEIGHT][];
 
@@ -198,7 +199,7 @@ namespace Pathfinding
                         uncheckedTiles.Remove(n);
 
                         n.g += currentCase.g;
-                        n.h = 5 * Heuristique(n.pos, end.pos);
+                        n.h =  4 * Heuristique(n.pos, end.pos);
                         n.f = n.g + n.h;
 
                         // On sélectionne la case dont le coût total est le moins élevé
@@ -214,60 +215,41 @@ namespace Pathfinding
                     break;
 
                 // On ajoute la nouvelle case dans le chemin
+                cost += map[currentCase.pos.Y][currentCase.pos.X];
                 path.Add(nextCase);
                 currentCase = nextCase;
             }
+
             return path;
         }
 
         public void DisplayMap(List<Position> path, HashSet<Position> checkedTiles)
         {
-            List<List<Case>> paths = new List<List<Case>>();
+            List<Case> paths = new List<Case>();
+
 
             if (doors[4].X < MAP_WIDTH / 3)
             {
-                paths.Add(AStar(GetCase(playerStartPos), GetCase(doors[4])));
-                paths.Add(AStar(GetCase(doors[4]), GetCase(doors[2])));
-                paths.Add(AStar(GetCase(doors[2]), GetCase(doors[3])));
-                paths.Add(AStar(GetCase(doors[3]), GetCase(goal)));
+                paths.AddRange((AStar(GetCase(playerStartPos), GetCase(doors[4]))));
+                paths.AddRange((AStar(GetCase(doors[4]), GetCase(doors[2]))));
+                paths.AddRange((AStar(GetCase(doors[2]), GetCase(doors[3]))));
+                paths.AddRange((AStar(GetCase(doors[3]), GetCase(goal))));
             }
 
             else if (doors[4].X > 2 * MAP_WIDTH / 3)
             {
-                paths.Add(AStar(GetCase(playerStartPos), GetCase(doors[0])));
-                paths.Add(AStar(GetCase(doors[0]), GetCase(doors[1])));
-                paths.Add(AStar(GetCase(doors[1]), GetCase(doors[4])));
-                paths.Add(AStar(GetCase(doors[4]), GetCase(goal)));
+                paths.AddRange(AStar(GetCase(playerStartPos), GetCase(doors[0])));
+                paths.AddRange(AStar(GetCase(doors[0]), GetCase(doors[1])));
+                paths.AddRange(AStar(GetCase(doors[1]), GetCase(doors[4])));
+                paths.AddRange(AStar(GetCase(doors[4]), GetCase(goal)));
             }
 
             else
             {
-                paths.Add(AStar(GetCase(playerStartPos), GetCase(doors[0])));
-                paths.Add(AStar(GetCase(doors[0]), GetCase(doors[4])));
-                paths.Add(AStar(GetCase(doors[4]), GetCase(doors[3])));
-                paths.Add(AStar(GetCase(doors[3]), GetCase(goal)));
-            }
-
-
-            /*var l = AStar(GetCase(playerStartPos), GetCase(doors[0]));*/
-            /*var l = AStar(GetCase(doors[2]), GetCase(doors[3]));*/
-            /* var l = AStar(GetCase(doors[0]), GetCase(doors[1]));*/
-            /*var l = AStar(GetCase(doors[2]), GetCase(doors[3]));*/
-            /* var l = AStar(GetCase(doors[0]), GetCase(doors[4]));*/
-            /*var l = AStar(GetCase(goal.X, goal.Y), GetCase(doors[2]));*/
-
-            Console.WriteLine(GetCase(playerStartPos).neighbors.Count);
-            Console.WriteLine(GetCase(doors[0]).neighbors.Count);
-            Console.WriteLine(GetCase(doors[1]).neighbors.Count);
-            Console.WriteLine(GetCase(doors[2]).neighbors.Count);
-            Console.WriteLine(GetCase(doors[3]).neighbors.Count);
-            Console.WriteLine(GetCase(doors[4]).neighbors.Count);
-
-            PrintCoord(GetCase(doors[1]).pos);
-
-            foreach (var c in GetCase(doors[1]).neighbors)
-            {
-                PrintCoord(c.pos);
+                paths.AddRange(AStar(GetCase(playerStartPos), GetCase(doors[0])));
+                paths.AddRange(AStar(GetCase(doors[0]), GetCase(doors[4])));
+                paths.AddRange(AStar(GetCase(doors[4]), GetCase(doors[3])));
+                paths.AddRange(AStar(GetCase(doors[3]), GetCase(goal)));
             }
 
             ConsoleColor defaultColor = ConsoleColor.White; // Console.ForegroundColor;
@@ -293,16 +275,9 @@ namespace Pathfinding
                         position.X = j;
                         position.Y = i;
 
-                        /*if (l.Contains(GetCase(position)))
-                            Console.ForegroundColor = ConsoleColor.Red;*/
-
-                        foreach (var p in paths)
-                        {
-                            if (p.Contains(GetCase(position)))
-                                Console.ForegroundColor = ConsoleColor.Red;
-                        }
-
-                        if (checkedTiles.Contains(position))
+                        if (paths.Contains(GetCase(position)))
+                            Console.ForegroundColor = ConsoleColor.Red;
+                        else if (!uncheckedTiles.Contains(GetCase(position)))
                             Console.ForegroundColor = ConsoleColor.Blue;
                         else if (Math.Abs(map[i][j]) == int.MaxValue)
                             Console.ForegroundColor = ConsoleColor.DarkGray;
@@ -315,6 +290,7 @@ namespace Pathfinding
 
             Console.WriteLine($"PLAYER POS : {playerStartPos.X}, {playerStartPos.Y}");
             Console.WriteLine($"GOAL POS : {goal.X}, {goal.Y}");
+            Console.WriteLine("Trajet trouvé! longueur: {0}, coût: {1}, et on a du tester {2} positions pour l'obtenir.", paths.Count, cost, cases.Count - uncheckedTiles.Count);
 
             Console.ForegroundColor = defaultColor;
         }
@@ -328,21 +304,10 @@ namespace Pathfinding
         {
             List<Position> path = new List<Position>();
             HashSet<Position> checkedTiles = new HashSet<Position>();
-            int cost;
             Game game = new Game();
             Console.WriteLine("Initialisation....");
             game.Init();
             Console.WriteLine("Calcul du trajet....");
-            /*bool found = game.GetShortestPath(path, out cost);
-            if(found)
-            {
-                Console.WriteLine("Trajet trouvé! longueur: {0}, coût: {1}, et on a du tester {2} positions pour l'obtenir.", path.Count, cost, checkedTiles.Count);
-            }
-            else
-            {
-                Console.WriteLine("Aucun trajet trouvé.");
-            }*/
-
             game.DisplayMap(path, checkedTiles);
 
             /*Console.WriteLine(game.doors.Count);*/
