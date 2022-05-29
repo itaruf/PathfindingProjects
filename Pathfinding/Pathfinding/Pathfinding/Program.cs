@@ -41,8 +41,12 @@ namespace Pathfinding
                     map[i][j] = ((j == MAP_WIDTH / 3) || (j == MAP_WIDTH * 2 / 3) || (i == MAP_HEIGHT / 2)) ? int.MaxValue : random.Next(MAX_WEIGHT) + 1;
 
                     Case c = new Case(new Position(j, i), 0, 0, 0);
-                    cases.Add(c);
-                    uncheckedTiles.Add(c);
+
+                    if (map[i][j] != int.MaxValue)
+                    {
+                        cases.Add(c);
+                        uncheckedTiles.Add(c);
+                    }
                 }
             }
 
@@ -173,37 +177,32 @@ namespace Pathfinding
         {
             List<Case> path = new List<Case>();
 
-            Case currentCase = start;
+            if (start == null || end == null)
+                return path;
 
-           /* path.Add(currentCase);*/
+            Case currentCase = start;
 
             while (uncheckedTiles.Count > 0)
             {
                 Case nextCase = null;
                 int min = int.MaxValue;
-                uncheckedTiles.Remove(currentCase);
 
                 if (currentCase == null || currentCase == end)
                     break;
 
                 foreach (var n in currentCase.neighbors)
                 {
-                    if (n  == end)
-                    {
-                        nextCase = n;
-                        break;
-                    }
                     // On ne regarde que les cases voisines encore inexplorées
-                    else if (uncheckedTiles.Contains(n) && n.g != int.MaxValue)
+                    if (uncheckedTiles.Contains(n) && n.g != int.MaxValue)
                     {
                         uncheckedTiles.Remove(n);
 
                         n.g += currentCase.g;
-                        n.h =  4 * Heuristique(n.pos, end.pos);
+                        n.h = 4 * Heuristique(n.pos, end.pos);
                         n.f = n.g + n.h;
 
                         // On sélectionne la case dont le coût total est le moins élevé
-                        if (n.f < min)
+                        if (n.f < min || (n.f <= min && n == end))
                         {
                             min = n.f;
                             nextCase = n;
@@ -211,10 +210,10 @@ namespace Pathfinding
                     }
                 }
 
-                if (nextCase == null)
-                    break;
+                /*if (nextCase == null)
+                    break;*/
 
-                // On ajoute la nouvelle case dans le chemin
+                uncheckedTiles.Remove(currentCase);
                 cost += map[currentCase.pos.Y][currentCase.pos.X];
                 path.Add(nextCase);
                 currentCase = nextCase;
@@ -223,7 +222,7 @@ namespace Pathfinding
             return path;
         }
 
-        public void DisplayMap(List<Position> path, HashSet<Position> checkedTiles)
+        public void DisplayMap()
         {
             List<Case> paths = new List<Case>();
 
@@ -302,13 +301,11 @@ namespace Pathfinding
 
         public static void Main(string[] args)
         {
-            List<Position> path = new List<Position>();
-            HashSet<Position> checkedTiles = new HashSet<Position>();
             Game game = new Game();
             Console.WriteLine("Initialisation....");
             game.Init();
             Console.WriteLine("Calcul du trajet....");
-            game.DisplayMap(path, checkedTiles);
+            game.DisplayMap();
 
             /*Console.WriteLine(game.doors.Count);*/
             Console.ReadKey();
