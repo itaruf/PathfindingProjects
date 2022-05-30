@@ -41,12 +41,8 @@ namespace Pathfinding
                     map[i][j] = ((j == MAP_WIDTH / 3) || (j == MAP_WIDTH * 2 / 3) || (i == MAP_HEIGHT / 2)) ? int.MaxValue : random.Next(MAX_WEIGHT) + 1;
 
                     Case c = new Case(new Position(j, i), 0, 0, 0);
-
-                    if (map[i][j] != int.MaxValue)
-                    {
-                        cases.Add(c);
-                        uncheckedTiles.Add(c);
-                    }
+                    cases.Add(c);
+                    uncheckedTiles.Add(c);
                 }
             }
 
