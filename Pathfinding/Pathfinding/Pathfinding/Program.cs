@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Remoting.Channels;
-using System.Security.Cryptography.X509Certificates;
 
 namespace Pathfinding
 {
@@ -12,7 +9,7 @@ namespace Pathfinding
         const int MAP_WIDTH = 90;
         const int MAP_HEIGHT = 50;
         const int MAX_WEIGHT = 9;
-        const int WEIGHT = (int) MAX_WEIGHT / 2;
+        const int WEIGHT = 2;
 
         //ATTENTION: le tableau est construit en mode [hauteur][largeur].
         public int[][] map;
@@ -21,10 +18,8 @@ namespace Pathfinding
         public Position goal;
         public List<Position> doors = new List<Position>();
 
-        public List<Case> cases = new List<Case>();
-        public Dictionary<Case, List<Case>> paths = new Dictionary<Case, List<Case>>();
-        List<Case> uncheckedTiles = new List<Case>();
-        int cost = 0;
+        public List<Tile> checkPoints = new List<Tile>();
+        public List<Tile> tiles = new List<Tile>();
 
         public void Init()
         {
@@ -40,9 +35,8 @@ namespace Pathfinding
                     // On met des valeurs aléatoires dans chaque case, sauf sur les murs
                     map[i][j] = ((j == MAP_WIDTH / 3) || (j == MAP_WIDTH * 2 / 3) || (i == MAP_HEIGHT / 2)) ? int.MaxValue : random.Next(MAX_WEIGHT) + 1;
 
-                    Case c = new Case(new Position(j, i), 0, 0, 0);
-                    cases.Add(c);
-                    uncheckedTiles.Add(c);
+                    Tile c = new Tile(new Position(j, i), map[i][j], 0);
+                    tiles.Add(c);
                 }
             }
 
@@ -61,6 +55,7 @@ namespace Pathfinding
             //1+ pour éviter qu'elles se retrouvent sur le mur horizontal
             doors.Add(new Position(MAP_WIDTH / 3, 1 + MAP_HEIGHT / 2 + random.Next(MAP_HEIGHT / 2 - 1)));
             doors.Add(new Position(MAP_WIDTH * 2 / 3, 1 + MAP_HEIGHT / 2 + random.Next(MAP_HEIGHT / 2 - 1)));
+
             //la porte horizontale, attention aux murs verticaux
             Position lastDoor = new Position(random.Next(MAP_WIDTH), MAP_HEIGHT / 2);
             while (lastDoor.X % (MAP_WIDTH / 3) == 0)
@@ -69,86 +64,94 @@ namespace Pathfinding
             };
             doors.Add(lastDoor);
 
+            /*Now that we know where our horizontal door is, we determine the checkpoints to reach when pathing*/
+            if (lastDoor.X < MAP_WIDTH / 3)
+            {
+                checkPoints = new List<Tile>()
+                {
+                    GetTile(playerStartPos),
+                    GetTile(doors[4]),
+                    GetTile(doors[2]),
+                    GetTile(doors[3]),
+                    GetTile(goal)
+                };
+            }
+
+            else if (lastDoor.X > 2 * MAP_WIDTH / 3)
+            {
+                checkPoints = new List<Tile>()
+                {
+                    GetTile(playerStartPos),
+                    GetTile(doors[0]),
+                    GetTile(doors[1]),
+                    GetTile(doors[4]),
+                    GetTile(goal)
+                };
+            }
+
+            else
+            {
+                checkPoints = new List<Tile>()
+                {
+                    GetTile(playerStartPos),
+                    GetTile(doors[0]),
+                    GetTile(doors[4]),
+                    GetTile(doors[3]),
+                    GetTile(goal)
+                };
+            }
+
             foreach (Position position in doors)
             {
                 map[position.Y][position.X] = 1;
+                GetTile(position).g = 1;
             }
 
-            foreach (var c in cases)
-            {
-                c.g = map[c.pos.Y][c.pos.X]; //map[c.pos.Y][c.pos.X];
+            // Fill all the neighbors of each case
+            foreach (var c in tiles)
                 getNeighborsOfPoint(c);
-            }
         }
 
         int Heuristique(Position start, Position goal)
         {
-            // On renvoit la distance de manhattan entre la case de départ et la case d'arrivée
-            return (Math.Abs(start.X - goal.X) + Math.Abs(start.Y - goal.Y));
+
+            return (int)Math.Sqrt(Math.Pow(start.X - goal.X, 2) + Math.Pow(start.Y - goal.Y, 2)) * WEIGHT; // Distance euclidienne  * coeff : more weight =  more cost ; less checked tiles
+            return (Math.Abs(start.X - goal.X) + Math.Abs(start.Y - goal.Y)) * WEIGHT; // Distance de manhattan * coeff : more weight = more cost ; less checked tiles
+            return 0; // Dijkstra : less cost ; more checked tiles
+            return (int)(Math.Pow(start.X - goal.X, 2) + Math.Pow(start.Y - goal.Y, 2)) * WEIGHT;  // Distance enclidienne carrée * coeff : more weight = more cost ; less checked tiles
         }
 
-        Case GetCase(int x, int y)
+        Tile GetTile(int x, int y)
         {
-            return cases.Find(c => c.pos.X == x && c.pos.Y == y);
+            return tiles.Find(c => c.position.X == x && c.position.Y == y);
         }
-        Case GetCase(Position position)
+        Tile GetTile(Position position)
         {
-            return cases.Find(c => c.pos.X == position.X && c.pos.Y == position.Y);
+            return tiles.Find(c => c.position.X == position.X && c.position.Y == position.Y);
         }
 
-        /*https://codereview.stackexchange.com/questions/68627/getting-the-neighbors-of-a-point-in-a-2d-grid*/
-        /*private List<Case> getNeighborsOfPoint(int x, int y)
+        void getNeighborsOfPoint(Tile c)
         {
-            List<Case> neighbors = new List<Case>();
-            for (int xx = -1; xx <= 1; xx++)
-            {
-                for (int yy = -1; yy <= 1; yy++)
-                {
-                    if (xx == 0 && yy == 0)
-                    {
-                        continue; // You are not neighbor to yourself
-                    }
-                    if (Math.Abs(xx) + Math.Abs(yy) > 1)
-                    {
-                        continue;
-                    }
-                    if (isOnMap(x + xx, y + yy))
-                    {
-                        if (map[x + xx][y + yy] != int.MaxValue)
-                        {
-                            var result = GetCase(x + xx, y + yy);
-                            if (result != null)
-                                neighbors.Add(result);
-                        }
-                    }
-                }
-            }
-            return neighbors;
-        }*/
+            if (c == null)
+                return;
 
-
-        void getNeighborsOfPoint(Case c)
-        {
             for (int xx = -1; xx <= 1; ++xx)
             {
                 for (int yy = -1; yy <= 1; ++yy)
                 {
                     if (xx == 0 && yy == 0)
-                    {
-                        continue; // You are not neighbor to yourself
-                    }
-                    if (Math.Abs(xx) + Math.Abs(yy) > 1)
+                        continue;
+                    /*if (Math.Abs(xx) + Math.Abs(yy) > 1) // Comment the block for 8-connexity instead of 4
                     {
                         continue;
-                    }
-                    if (isOnMap(c.pos.X + xx, c.pos.Y + yy))
+                    }*/
+                    if (isOnMap(c.position.X + xx, c.position.Y + yy))
                     {
-                        var result = GetCase(c.pos.X + xx, c.pos.Y + yy);
-                        if (result != null)
-                        {
-                            if (result.g != int.MaxValue)
-                                c.neighbors.Add(result);
-                        }
+                        var result = GetTile(c.position.X + xx, c.position.Y + yy);
+                        if (result == null)
+                            return;
+                        if (result.g != int.MaxValue)
+                            c.neighbors.Add(result);
                     }
                 }
             }
@@ -159,95 +162,113 @@ namespace Pathfinding
             return x >= 0 && y >= 0 && x < MAP_WIDTH && y < MAP_HEIGHT;
         }
 
-        void PrintCoord(Position pos)
-        {
-            Console.WriteLine($"X : {pos.X} Y : {pos.Y}");
-        }
         //Fonction de calcul du chemin. Elle doit retourner les éléments suivants:
         //path: liste des points à traverser pour aller du départ à l'arrivée
         //cost: coût du trajet
         //checkedTiles: liste de toutes les positions qui ont été testées pour trouver le chemin le plus court
-
-
-        List<Case> AStar(Case start, Case end)
+        public void AStar(Tile start, Tile end, List<Tile> path, ref int cost, HashSet<Tile> checkedTiles)
         {
-            List<Case> path = new List<Case>();
-
             if (start == null || end == null)
-                return path;
+                return;
 
-            Case currentCase = start;
+            // all the tiles waiting to be treated
+            List<Tile> pendingTiles = new List<Tile>();
+            // all the tiles treated by the algorithm
+            List<Tile> treatedCases = new List<Tile>();
 
-            while (uncheckedTiles.Count > 0)
+            /*Initialization*/
+            Tile currentTile = null;
+
+            // the cost of the starting tile is now 0
+            start.g = 0;
+            start.h = Heuristique(start.position, end.position);
+            pendingTiles.Add(start);
+
+            while (true)
             {
-                Case nextCase = null;
-                int min = int.MaxValue;
-
-                if (currentCase == null || currentCase == end)
-                    break;
-
-                foreach (var n in currentCase.neighbors)
+                // Popping the first pending tile
+                try
                 {
-                    // On ne regarde que les cases voisines encore inexplorées
-                    if (uncheckedTiles.Contains(n) && n.g != int.MaxValue)
-                    {
-                        uncheckedTiles.Remove(n);
+                    currentTile = pendingTiles[0];
 
-                        n.g += currentCase.g;
-                        n.h = 4 * Heuristique(n.pos, end.pos);
-                        n.f = n.g + n.h;
+                    if (currentTile == null)
+                        throw new Exception();
 
-                        // On sélectionne la case dont le coût total est le moins élevé
-                        if (n.f < min || (n.f <= min && n == end))
-                        {
-                            min = n.f;
-                            nextCase = n;
-                        }
-                    }
+                } catch (ArgumentOutOfRangeException)
+                {
+                    return;
+                } 
+                catch (Exception)
+                {
+                    return;
                 }
 
-                /*if (nextCase == null)
-                    break;*/
+                foreach (var pendingTile in pendingTiles)
+                {
+                    // we reached the end
+                    if (pendingTile == end)
+                    {
+                        currentTile = end;
+                        goto exit;
+                    }
 
-                uncheckedTiles.Remove(currentCase);
-                cost += map[currentCase.pos.Y][currentCase.pos.X];
-                path.Add(nextCase);
-                currentCase = nextCase;
+                    // looking for the next pending tile which has the less total cost and, if 2 are equals, which has the less g cost
+                    if (pendingTile.f < currentTile.f || (pendingTile.f == currentTile.f && (map[pendingTile.position.Y][pendingTile.position.X] < map[currentTile.position.Y][currentTile.position.X])))
+                        currentTile = pendingTile;
+                }
+
+
+                // Check each non-treated neighbors of the current case
+                foreach (var n in currentTile.neighbors)
+                {
+                    if (treatedCases.Contains(n))
+                        continue;
+
+                    // the neighbor has been checked atleast once
+                    if (!checkedTiles.Contains(n))
+                        checkedTiles.Add(n);
+                    /*uncheckedTiles.Remove(n);*/
+
+                    // calculating the cost so far + its heuristic
+                    int g = n.g + currentTile.g;
+                    int h = Heuristique(n.position, end.position);
+
+                    // update the cost and the heuristic if we found a better path or if the neighbor isn't pending to be treated yet, calculate them for the first time
+                    if ((pendingTiles.Contains(n) && g + h < n.f) || !pendingTiles.Contains(n))
+                    {
+                        n.g = g;
+                        n.h = h;
+                        n.previousTile = currentTile;
+                    }
+
+                    // Add each new explored neighbors tiles in the waiting list
+                    if (!pendingTiles.Contains(n))
+                        pendingTiles.Add(n);
+                }
+
+                /*the current tile is now treated*/
+                /*uncheckedTiles.Remove(currentTile);*/
+                pendingTiles.Remove(currentTile);
+                if (!treatedCases.Contains(currentTile))
+                    treatedCases.Add(currentTile);
+                if (!checkedTiles.Contains(currentTile))
+                    checkedTiles.Add(currentTile);
             }
 
-            return path;
+        // Fill our path
+        exit:
+            while (currentTile != start)
+            {
+                // Gradually determine the cost so far
+                cost += map[currentTile.position.Y][currentTile.position.X];
+                path.Add(currentTile.previousTile);
+                currentTile = currentTile.previousTile;
+            }
         }
 
-        public void DisplayMap()
+        public void DisplayMap(List<Tile> path, ref int cost, HashSet<Tile> checkedTiles)
         {
-            List<Case> paths = new List<Case>();
-
-
-            if (doors[4].X < MAP_WIDTH / 3)
-            {
-                paths.AddRange((AStar(GetCase(playerStartPos), GetCase(doors[4]))));
-                paths.AddRange((AStar(GetCase(doors[4]), GetCase(doors[2]))));
-                paths.AddRange((AStar(GetCase(doors[2]), GetCase(doors[3]))));
-                paths.AddRange((AStar(GetCase(doors[3]), GetCase(goal))));
-            }
-
-            else if (doors[4].X > 2 * MAP_WIDTH / 3)
-            {
-                paths.AddRange(AStar(GetCase(playerStartPos), GetCase(doors[0])));
-                paths.AddRange(AStar(GetCase(doors[0]), GetCase(doors[1])));
-                paths.AddRange(AStar(GetCase(doors[1]), GetCase(doors[4])));
-                paths.AddRange(AStar(GetCase(doors[4]), GetCase(goal)));
-            }
-
-            else
-            {
-                paths.AddRange(AStar(GetCase(playerStartPos), GetCase(doors[0])));
-                paths.AddRange(AStar(GetCase(doors[0]), GetCase(doors[4])));
-                paths.AddRange(AStar(GetCase(doors[4]), GetCase(doors[3])));
-                paths.AddRange(AStar(GetCase(doors[3]), GetCase(goal)));
-            }
-
-            ConsoleColor defaultColor = ConsoleColor.White; // Console.ForegroundColor;
+            ConsoleColor defaultColor = ConsoleColor.White;
             Position position = new Position();
 
             for (int i = 0; i < MAP_HEIGHT; ++i)
@@ -270,9 +291,9 @@ namespace Pathfinding
                         position.X = j;
                         position.Y = i;
 
-                        if (paths.Contains(GetCase(position)))
+                        if (path.Contains(GetTile(position)))
                             Console.ForegroundColor = ConsoleColor.Red;
-                        else if (!uncheckedTiles.Contains(GetCase(position)))
+                        else if (checkedTiles.Contains(GetTile(position)))
                             Console.ForegroundColor = ConsoleColor.Blue;
                         else if (Math.Abs(map[i][j]) == int.MaxValue)
                             Console.ForegroundColor = ConsoleColor.DarkGray;
@@ -283,9 +304,7 @@ namespace Pathfinding
                 Console.WriteLine();
             }
 
-            Console.WriteLine($"PLAYER POS : {playerStartPos.X}, {playerStartPos.Y}");
-            Console.WriteLine($"GOAL POS : {goal.X}, {goal.Y}");
-            Console.WriteLine("Trajet trouvé! longueur: {0}, coût: {1}, et on a du tester {2} positions pour l'obtenir.", paths.Count, cost, cases.Count - uncheckedTiles.Count);
+            Console.WriteLine("Trajet trouvé! longueur: {0}, coût: {1}, et on a du tester {2} positions pour l'obtenir.", path.Count, cost, checkedTiles.Count);
 
             Console.ForegroundColor = defaultColor;
         }
@@ -293,17 +312,25 @@ namespace Pathfinding
 
     class MainClass
     {
-
-
         public static void Main(string[] args)
         {
+            List<Tile> path = new List<Tile>();
+            HashSet<Tile> checkedTiles = new HashSet<Tile>();
+            int cost = 0;
+
             Game game = new Game();
+
             Console.WriteLine("Initialisation....");
             game.Init();
-            Console.WriteLine("Calcul du trajet....");
-            game.DisplayMap();
 
-            /*Console.WriteLine(game.doors.Count);*/
+            Console.WriteLine("Calcul du trajet....");
+            game.AStar(game.checkPoints[0], game.checkPoints[1], path, ref cost, checkedTiles);
+            game.AStar(game.checkPoints[1], game.checkPoints[2], path, ref cost, checkedTiles);
+            game.AStar(game.checkPoints[2], game.checkPoints[3], path, ref cost, checkedTiles);
+            game.AStar(game.checkPoints[3], game.checkPoints[4], path, ref cost, checkedTiles);
+
+            game.DisplayMap(path, ref cost, checkedTiles);
+
             Console.ReadKey();
         }
     }
