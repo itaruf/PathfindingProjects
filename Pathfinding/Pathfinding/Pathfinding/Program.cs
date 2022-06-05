@@ -32,7 +32,7 @@ namespace Pathfinding
                 map[i] = new int[MAP_WIDTH];
                 for (int j = 0; j < MAP_WIDTH; ++j)
                 {
-                    // On met des valeurs aléatoires dans chaque case, sauf sur les murs
+                    // On met des valeurs aléatoires dans chaque tile, sauf sur les murs
                     map[i][j] = ((j == MAP_WIDTH / 3) || (j == MAP_WIDTH * 2 / 3) || (i == MAP_HEIGHT / 2)) ? int.MaxValue : random.Next(MAX_WEIGHT) + 1;
 
                     Tile t = new Tile(new Position(j, i), map[i][j], 0);
@@ -116,9 +116,9 @@ namespace Pathfinding
         {
 
             return (int)Math.Sqrt(Math.Pow(start.X - goal.X, 2) + Math.Pow(start.Y - goal.Y, 2)) * WEIGHT; // Distance euclidienne  * coeff : more weight =  more cost ; less checked tiles
-            return (Math.Abs(start.X - goal.X) + Math.Abs(start.Y - goal.Y)) * WEIGHT; // Distance de manhattan * coeff : more weight = more cost ; less checked tiles
+           /* return (Math.Abs(start.X - goal.X) + Math.Abs(start.Y - goal.Y)) * WEIGHT; // Distance de manhattan * coeff : more weight = more cost ; less checked tiles
             return 0; // Dijkstra : less cost ; more checked tiles
-            return (int)(Math.Pow(start.X - goal.X, 2) + Math.Pow(start.Y - goal.Y, 2)) * WEIGHT;  // Distance enclidienne carrée * coeff : more weight = more cost ; less checked tiles
+            return (int)(Math.Pow(start.X - goal.X, 2) + Math.Pow(start.Y - goal.Y, 2)) * WEIGHT;  // Distance enclidienne carrée * coeff : more weight = more cost ; less checked tiles*/
         }
 
         Tile GetTile(int x, int y)
@@ -174,7 +174,7 @@ namespace Pathfinding
             // all the tiles waiting to be treated
             List<Tile> pendingTiles = new List<Tile>();
             // all the tiles treated by the algorithm
-            List<Tile> treatedCases = new List<Tile>();
+            List<Tile> treatedTiles = new List<Tile>();
 
             /*Initialization*/
             Tile currentTile = null;
@@ -218,10 +218,10 @@ namespace Pathfinding
                 }
 
 
-                // Check each non-treated neighbors of the current case
+                // Check each non-treated neighbors of the current tile
                 foreach (var n in currentTile.neighbors)
                 {
-                    if (treatedCases.Contains(n))
+                    if (treatedTiles.Contains(n))
                         continue;
 
                     // the neighbor has been checked atleast once
@@ -249,8 +249,8 @@ namespace Pathfinding
                 /*the current tile is now treated*/
                 /*uncheckedTiles.Remove(currentTile);*/
                 pendingTiles.Remove(currentTile);
-                if (!treatedCases.Contains(currentTile))
-                    treatedCases.Add(currentTile);
+                if (!treatedTiles.Contains(currentTile))
+                    treatedTiles.Add(currentTile);
                 if (!checkedTiles.Contains(currentTile))
                     checkedTiles.Add(currentTile);
             }
