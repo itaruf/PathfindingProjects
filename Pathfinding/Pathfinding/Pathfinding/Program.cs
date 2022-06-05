@@ -109,7 +109,7 @@ namespace Pathfinding
 
             // Fill all the neighbors of each tile
             foreach (var t in tiles)
-                getNeighborsOfPoint(t);
+                GetNeighbors(t);
         }
 
         int Heuristique(Position start, Position goal)
@@ -130,7 +130,7 @@ namespace Pathfinding
             return tiles.Find(t => t.position.X == position.X && t.position.Y == position.Y);
         }
 
-        void getNeighborsOfPoint(Tile t)
+        void GetNeighbors(Tile t)
         {
             if (t == null)
                 return;
@@ -145,7 +145,7 @@ namespace Pathfinding
                     {
                         continue;
                     }*/
-                    if (isOnMap(t.position.X + xx, t.position.Y + yy))
+                    if (IsOnMap(t.position.X + xx, t.position.Y + yy))
                     {
                         var result = GetTile(t.position.X + xx, t.position.Y + yy);
                         if (result == null)
@@ -157,7 +157,7 @@ namespace Pathfinding
             }
         }
 
-        public bool isOnMap(int x, int y)
+        public bool IsOnMap(int x, int y)
         {
             return x >= 0 && y >= 0 && x < MAP_WIDTH && y < MAP_HEIGHT;
         }
