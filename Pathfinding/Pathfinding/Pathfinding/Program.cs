@@ -104,7 +104,7 @@ namespace Pathfinding
             foreach (Position position in doors)
             {
                 map[position.Y][position.X] = 1;
-                GetTile(position).g = 1;
+                GetTile(position).c = 1;
             }
 
             // Fill all the neighbors of each tile
@@ -150,7 +150,7 @@ namespace Pathfinding
                         var result = GetTile(t.position.X + xx, t.position.Y + yy);
                         if (result == null)
                             return;
-                        if (result.g != int.MaxValue)
+                        if (result.c != int.MaxValue)
                             t.neighbors.Add(result);
                     }
                 }
@@ -180,7 +180,7 @@ namespace Pathfinding
             Tile currentTile = null;
 
             // the cost of the starting tile is now 0
-            start.g = 0;
+            start.c = 0;
             start.h = Heuristique(start.position, end.position);
             pendingTiles.Add(start);
 
@@ -212,8 +212,8 @@ namespace Pathfinding
                         goto exit;
                     }
 
-                    // looking for the next pending tile which has the less total cost and, if 2 are equals, which has the less g cost
-                    if (pendingTile.f < currentTile.f || (pendingTile.f == currentTile.f && (map[pendingTile.position.Y][pendingTile.position.X] < map[currentTile.position.Y][currentTile.position.X])))
+                    // looking for the next pending tile which has the less total cost and, if 2 are equals, which has the less c cost
+                    if (pendingTile.total < currentTile.total || (pendingTile.total == currentTile.total && (map[pendingTile.position.Y][pendingTile.position.X] < map[currentTile.position.Y][currentTile.position.X])))
                         currentTile = pendingTile;
                 }
 
@@ -230,13 +230,13 @@ namespace Pathfinding
                     /*uncheckedTiles.Remove(n);*/
 
                     // calculating the cost so far + its heuristic
-                    int g = n.g + currentTile.g;
+                    int c = n.c + currentTile.c;
                     int h = Heuristique(n.position, end.position);
 
                     // update the cost and the heuristic if we found a better path or if the neighbor isn't pending to be treated yet, calculate them for the first time
-                    if ((pendingTiles.Contains(n) && g + h < n.f) || !pendingTiles.Contains(n))
+                    if ((pendingTiles.Contains(n) && c + h < n.total) || !pendingTiles.Contains(n))
                     {
-                        n.g = g;
+                        n.c = c;
                         n.h = h;
                         n.previousTile = currentTile;
                     }

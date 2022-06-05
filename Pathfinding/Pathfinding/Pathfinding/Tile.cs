@@ -6,16 +6,16 @@ namespace Pathfinding
     {
         public Tile previousTile = null;
         public Position position;    // coords
-        public int f => g + h;  // total : cost + heuristic
-        public int g = 0;       // cost
+        public int total => c + h;  // total : cost + heuristic
+        public int c = 0;       // cost
         public int h = 0;       // heuristic
 
         public List<Tile> neighbors = new List<Tile>();
 
-        public Tile(Position position, int g, int h)
+        public Tile(Position position, int c, int h)
         {
             this.position = position;
-            this.g = g;
+            this.c = c;
             this.h = h;
         }
     }
