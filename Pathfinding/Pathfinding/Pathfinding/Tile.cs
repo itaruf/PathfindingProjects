@@ -8,7 +8,7 @@ namespace Pathfinding
         public Position position;    // coords
         public int f => g + h;  // total : cost + heuristic
         public int g = 0;       // cost
-        public int h = 0;       // h
+        public int h = 0;       // heuristic
 
         public List<Tile> neighbors = new List<Tile>();
 
