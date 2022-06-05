@@ -35,8 +35,8 @@ namespace Pathfinding
                     // On met des valeurs aléatoires dans chaque case, sauf sur les murs
                     map[i][j] = ((j == MAP_WIDTH / 3) || (j == MAP_WIDTH * 2 / 3) || (i == MAP_HEIGHT / 2)) ? int.MaxValue : random.Next(MAX_WEIGHT) + 1;
 
-                    Tile c = new Tile(new Position(j, i), map[i][j], 0);
-                    tiles.Add(c);
+                    Tile t = new Tile(new Position(j, i), map[i][j], 0);
+                    tiles.Add(t);
                 }
             }
 
@@ -64,7 +64,7 @@ namespace Pathfinding
             };
             doors.Add(lastDoor);
 
-            /*Now that we know where our horizontal door is, we determine the checkpoints to reach when pathing*/
+            /*Now that we know where our horizontal door is, we can determine the checkpoints to reach when pathing*/
             if (lastDoor.X < MAP_WIDTH / 3)
             {
                 checkPoints = new List<Tile>()
@@ -107,9 +107,9 @@ namespace Pathfinding
                 GetTile(position).g = 1;
             }
 
-            // Fill all the neighbors of each case
-            foreach (var c in tiles)
-                getNeighborsOfPoint(c);
+            // Fill all the neighbors of each tile
+            foreach (var t in tiles)
+                getNeighborsOfPoint(t);
         }
 
         int Heuristique(Position start, Position goal)
@@ -123,16 +123,16 @@ namespace Pathfinding
 
         Tile GetTile(int x, int y)
         {
-            return tiles.Find(c => c.position.X == x && c.position.Y == y);
+            return tiles.Find(t => t.position.X == x && t.position.Y == y);
         }
         Tile GetTile(Position position)
         {
-            return tiles.Find(c => c.position.X == position.X && c.position.Y == position.Y);
+            return tiles.Find(t => t.position.X == position.X && t.position.Y == position.Y);
         }
 
-        void getNeighborsOfPoint(Tile c)
+        void getNeighborsOfPoint(Tile t)
         {
-            if (c == null)
+            if (t == null)
                 return;
 
             for (int xx = -1; xx <= 1; ++xx)
@@ -145,13 +145,13 @@ namespace Pathfinding
                     {
                         continue;
                     }*/
-                    if (isOnMap(c.position.X + xx, c.position.Y + yy))
+                    if (isOnMap(t.position.X + xx, t.position.Y + yy))
                     {
-                        var result = GetTile(c.position.X + xx, c.position.Y + yy);
+                        var result = GetTile(t.position.X + xx, t.position.Y + yy);
                         if (result == null)
                             return;
                         if (result.g != int.MaxValue)
-                            c.neighbors.Add(result);
+                            t.neighbors.Add(result);
                     }
                 }
             }
