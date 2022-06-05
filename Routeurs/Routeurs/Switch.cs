@@ -98,10 +98,10 @@ namespace Routeurs
                     // On ne check que les switch voisins pas encore visités
                     if (unvisitedSwitch.Contains(sw.Key))
                     {
-                        // On additionne d'une part, la distance entre le switch étudié et le switch voisin étudié (ie: les ms entre les deux), et d'autre part, la distance cumulée du switch étudié depuis le switch this
+                        // coût cumulé jusque-là + coût du switch
                         int distance = distances[currentSwitch] + sw.Value;
 
-                        // Si la distance cumulée du switch voisin est supérieure à la nouvelle distance calculée, alors nous avons trouvé un chemin plus court
+                        // Si le précédent coût total est supérieur au nouveau coût calculé, alors nous avons trouvé un chemin plus court
                         if (distances[sw.Key] > distance)
                         {
                             // On change la valeur et on met à jour le chemin de ce switch voisin
@@ -111,7 +111,6 @@ namespace Routeurs
                             paths[sw.Key].Clear();
 
                             // On enregistre le nouveau chemin
-
                             paths[sw.Key].Add(this); // On commence par notre switch this
 
                             for (int i = 0; i < paths[currentSwitch].Count; ++i)
@@ -128,8 +127,7 @@ namespace Routeurs
                 // On a fini de parcourir les voisins du switch étudié
                 unvisitedSwitch.Remove(currentSwitch);
 
-                // On cherche un nouveau switch a étudié ayant la distance la plus faible par rapport au switch this dans le graphe
-
+                // On cherche le nouveau switch à étudier avec la distance la plus faible
                 int min = int.MaxValue;
                 foreach (var sw in distances)
                 {
