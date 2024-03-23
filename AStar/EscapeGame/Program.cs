@@ -115,9 +115,9 @@ namespace EscapeGame
         {
 
             return (int)Math.Sqrt(Math.Pow(start.X - goal.X, 2) + Math.Pow(start.Y - goal.Y, 2)) * WEIGHT; // Distance euclidienne  * coeff : more weight =  more cost ; less checked tiles
-           /* return (Math.Abs(start.X - goal.X) + Math.Abs(start.Y - goal.Y)) * WEIGHT; // Distance de manhattan * coeff : more weight = more cost ; less checked tiles
-            return 0; // Dijkstra : less cost ; more checked tiles
-            return (int)(Math.Pow(start.X - goal.X, 2) + Math.Pow(start.Y - goal.Y, 2)) * WEIGHT;  // Distance enclidienne carrée * coeff : more weight = more cost ; less checked tiles*/
+            /*return (Math.Abs(start.X - goal.X) + Math.Abs(start.Y - goal.Y)) * WEIGHT;*/ // Distance de manhattan * coeff : more weight = more cost ; less checked tiles
+            /*return 0;*/ // Dijkstra : less cost ; more checked tiles
+            /*return (int)(Math.Pow(start.X - goal.X, 2) + Math.Pow(start.Y - goal.Y, 2)) * WEIGHT;*/ // Distance enclidienne carrée * coeff : more weight = more cost ; less checked tiles
         }
 
         Tile GetTile(int x, int y)
@@ -303,7 +303,7 @@ namespace EscapeGame
                 Console.WriteLine();
             }
 
-            Console.WriteLine("Trajet trouvé! longueur: {0}, coût: {1}, et on a du tester {2} positions pour l'obtenir.", path.Count, cost, checkedTiles.Count);
+            Console.WriteLine("Path found! length: {0}, cost: {1}, we tested {2} positions to obtain this path.", path.Count, cost, checkedTiles.Count);
 
             Console.ForegroundColor = defaultColor;
         }
@@ -319,10 +319,10 @@ namespace EscapeGame
 
             Game game = new Game();
 
-            Console.WriteLine("Initialisation....");
+            Console.WriteLine("Initialization....");
             game.Init();
 
-            Console.WriteLine("Calcul du trajet....");
+            Console.WriteLine("Calculating the path....");
             game.AStar(game.checkPoints[0], game.checkPoints[1], path, ref cost, checkedTiles);
             game.AStar(game.checkPoints[1], game.checkPoints[2], path, ref cost, checkedTiles);
             game.AStar(game.checkPoints[2], game.checkPoints[3], path, ref cost, checkedTiles);
