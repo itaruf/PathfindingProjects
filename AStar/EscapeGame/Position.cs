@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Pathfinding
+namespace EscapeGame
 {
     public struct Position : IEquatable<Position>
     {

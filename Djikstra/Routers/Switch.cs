@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Routeurs
+namespace Routers
 {
 
     public class Switch

@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Pathfinding
+namespace EscapeGame
 {
-
     class Game
     {
         const int MAP_WIDTH = 90;

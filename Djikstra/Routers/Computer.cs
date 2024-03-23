@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Routeurs
+namespace Routers
 {
     public class Computer
     {
